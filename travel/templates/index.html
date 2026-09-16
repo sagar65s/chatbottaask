@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{ config.title }}</title>
+<style>
+:root{--primary: {{ config.primary }}; --accent: {{ config.accent }};}
+*{box-sizing:border-box} body{margin:0;font-family:Inter,system-ui,Arial;background:#f5f7fb;color:#18202a}
+.app{min-height:100vh;display:flex;flex-direction:column;max-width:1100px;margin:auto}
+header{padding:18px 20px;background:white;border-bottom:1px solid #e8ebf0;position:sticky;top:0;z-index:2}
+h1{margin:0;font-size:clamp(20px,3vw,28px)} .domain{color:#687386;font-size:13px;margin-top:4px}
+main{flex:1;padding:24px 16px 120px} .messages{display:flex;flex-direction:column;gap:14px}
+.msg{max-width:min(820px,92%);padding:14px 16px;border-radius:18px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere}
+.user{align-self:flex-end;background:var(--primary);color:white;border-bottom-right-radius:5px}
+.bot{align-self:flex-start;background:white;border:1px solid #e7eaf0;border-bottom-left-radius:5px}
+.welcome{margin-bottom:18px;color:#5d6775} .composer{position:fixed;bottom:0;left:0;right:0;background:rgba(255,255,255,.94);backdrop-filter:blur(12px);border-top:1px solid #e8ebf0;padding:12px}
+.form{display:flex;gap:10px;max-width:1068px;margin:auto} textarea{flex:1;resize:none;min-height:48px;max-height:140px;padding:13px 15px;border:1px solid #d8dde6;border-radius:15px;font:inherit;outline:none}
+button{border:0;border-radius:14px;padding:0 20px;background:var(--primary);color:white;font-weight:700;cursor:pointer} button:disabled{opacity:.6}
+.clear{background:transparent;color:#667085;border:1px solid #d8dde6;padding:8px 12px;margin-top:10px}
+@media(max-width:600px){main{padding:18px 10px 110px} .msg{max-width:96%} .form{gap:7px} button{padding:0 14px}}
+</style></head>
+<body>
+<div class="app">
+<header><h1>{{ config.title }}</h1><div class="domain">{{ config.domain }}</div></header>
+<main><div id="messages" class="messages"><div class="welcome">{{ config.welcome }}</div></div>
+<button class="clear" onclick="clearChat()">Clear temporary chat</button></main>
+<div class="composer"><form id="form" class="form"><textarea id="input" placeholder="Ask about travel planning & information..." required></textarea><button id="send">Send</button></form></div>
+</div>
+<script>
+const box=document.getElementById("messages"), input=document.getElementById("input"), form=document.getElementById("form"), send=document.getElementById("send");
+function add(text, cls){const d=document.createElement("div");d.className="msg "+cls;d.textContent=text;box.appendChild(d);window.scrollTo(0,document.body.scrollHeight)}
+form.addEventListener("submit",async e=>{e.preventDefault();const text=input.value.trim();if(!text)return;add(text,"user");input.value="";send.disabled=true;try{const r=await fetch("/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:text})});const d=await r.json();add(d.answer||d.error||"Something went wrong.","bot")}catch(e){add("Connection error. Please try again.","bot")}finally{send.disabled=false;input.focus()}});
+input.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();form.requestSubmit()}});
+async function clearChat(){await fetch("/clear",{method:"POST"});location.reload()}
+</script></body></html>
